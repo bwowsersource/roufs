@@ -1,8 +1,13 @@
 {
   "name": "roufs",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Roufs is a lightweight filesystem routing package for express and koa",
   "main": "src/index.js",
+  "homepage": "https://github.com/bwowsersource/roufs",
+  "repository": {
+    "url": "https://github.com/bwowsersource/roufs",
+    "type": "git"
+  },
 
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
