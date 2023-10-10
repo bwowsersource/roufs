@@ -22,7 +22,7 @@ To get started with Roufs in an express project, follow these steps:
 
     ```
         -   `./routes
-        ├── home.js
+        ├── index.js
         ├── authors
         │   ├── GET.js
         │   └── POST.js

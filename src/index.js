@@ -58,29 +58,31 @@ function readControllers(basePath, urlPath) {
 
 
 function findHandler(routeMap, method, path) {
-    path = path === '/' || !path ? './' : path;
+    path = path === '/' || !path ? '.' : path;
     // console.log(method, path)
-    const matchedPath = Object.keys(routeMap).find(pathDefinition => {
-        pathDefSegments = pathDefinition.split('/').map((segment) => {
+    let params = {};
+    const matchedPath = Object.keys(routeMap).find(mappedPathItem => {
+        let pathDefSegments = mappedPathItem.split('/').filter((seg, pos) => seg ).map((segment) => {
             const [_, param] = segment.match(/^\[(.*)\]$/) || [];
             if (!param) return segment;
             return { paramName: param }
         });
-        pathSegments = path.split('/').filter((seg, pos) => seg || pos); // filterout 1st null segment. This is caused be leading '/' 
-        // console.log(pathDefSegments, pathSegments)
+        pathSegments = path.split('/').filter((seg, pos) => seg ); // filterout null segments. This is caused by leading '/' or '//'s
+        console.log(pathDefSegments, pathSegments)
         if (pathDefSegments.length != pathSegments.length) return false;
         return pathDefSegments.every((definedSegment, pos) => {
-            if (typeof definedSegment === "object") return definedSegment.value = pathSegments[pos]
+            if (typeof definedSegment === "object") {
+                params[definedSegment.paramName] = pathSegments[pos];
+                return true;
+            }
             if (pathSegments[pos].toLowerCase() === definedSegment.toLowerCase()) return true;
         })
     })
-    console.log('matchedPath', matchedPath, routeMap[matchedPath])
+    console.log(method, path,'matchedPath', matchedPath)
     if (!matchedPath) return null;
     return {
-        handler: routeMap[matchedPath][method], params: pathDefSegments.reduce((aggr, seg) => {
-            if (typeof seg === "string") return aggr;
-            return { ...aggr, [seg.paramName]: seg.value }
-        }, {})
+        handler: routeMap[matchedPath][method], 
+        params
     };
 }
 function loadRoutesFrom(routesDir) {
