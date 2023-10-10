@@ -15,10 +15,10 @@ function getMethodFromName(filename) {
 function readControllers(basePath, urlPath) {
     const fsPath = path.resolve(basePath, urlPath)
     const entities = fs.readdirSync(fsPath);
-    console.log(fsPath, basePath, urlPath, entities)
-    return entities.map(entity => {
+    console.log(fsPath, basePath, urlPath)
+    const partialHandlerMappings = entities.map(entity => {
         const entitypath = path.resolve(fsPath, entity);
-        console.log("21", fsPath, entitypath)
+        console.log(  "=>", entitypath, entity)
         const stat = fs.lstatSync(entitypath);
         // `/controllers/home/GET.js` => 'GET /home'
         // `/controllers/home/index.js exports {GET()} or default-export()` => 'GET /home'
@@ -27,25 +27,30 @@ function readControllers(basePath, urlPath) {
 
         if (stat.isFile()) {
             const methodName = getMethodFromName(entity)
+            // method-leaf
             if (methodName)
                 return { [urlPath]: { [methodName]: require(entitypath) } }
+            // path-leaf
             const handlers = require(entitypath);
             let defaultHandler = typeof handlers === "function" ? handlers : undefined
             const { GET, POST, DELETE, PATCH, PUT } = httpMethods.reduce((aggr, method) => {
                 return { ...aggr, [method]: handlers[method] || defaultHandler }
             }, {})
             const entityUrlSegment = entity.replace(/\.(t|j)s$/, '')
-            const pathToMatch = path.join(urlPath, entityUrlSegment === "index" ? '' : entityUrlSegment)
+            let pathToMatch = path.join(urlPath, entityUrlSegment === "index" ? '' : entityUrlSegment).replace('\\','/');
             return { [pathToMatch]: { GET, POST, DELETE, PATCH, PUT } }
         } else if (stat.isDirectory()) {
             const mapping = readControllers(basePath, path.join(urlPath, entity))
             return mapping; // Object.entries(mapping).map(([url, handlers]) => ({ path: url, handlers }))
         };
-    }).reduce((aggr, val) => {
-        Object.entries(val).forEach(([path, handlers]) => {
-
-            const commonHandlers = aggr[path] || {};
-            aggr[path] = { ...commonHandlers, ...handlers }
+    });
+    // console.log("routeTree", partialHandlerMappings)
+    // merge keys
+    return partialHandlerMappings.reduce((aggr, val) => {
+        Object.entries(val).forEach(([pathStub, handlers]) => {
+            const normalizedPathStub = path.sep === "\\" ? pathStub.replaceAll(path.sep,'/') : pathStub;
+            const existingHandlers = aggr[normalizedPathStub] || {};
+            aggr[normalizedPathStub] = { ...existingHandlers, ...handlers }
         });
         return aggr;
     }, {})
@@ -54,7 +59,7 @@ function readControllers(basePath, urlPath) {
 
 function findHandler(routeMap, method, path) {
     path = path === '/' || !path ? './' : path;
-    console.log(method, path)
+    // console.log(method, path)
     const matchedPath = Object.keys(routeMap).find(pathDefinition => {
         pathDefSegments = pathDefinition.split('/').map((segment) => {
             const [_, param] = segment.match(/^\[(.*)\]$/) || [];
@@ -62,7 +67,7 @@ function findHandler(routeMap, method, path) {
             return { paramName: param }
         });
         pathSegments = path.split('/').filter((seg, pos) => seg || pos); // filterout 1st null segment. This is caused be leading '/' 
-        console.log(pathDefSegments, pathSegments)
+        // console.log(pathDefSegments, pathSegments)
         if (pathDefSegments.length != pathSegments.length) return false;
         return pathDefSegments.every((definedSegment, pos) => {
             if (typeof definedSegment === "object") return definedSegment.value = pathSegments[pos]
@@ -80,7 +85,7 @@ function findHandler(routeMap, method, path) {
 }
 function loadRoutesFrom(routesDir) {
     const routeMap = readControllers(routesDir, './');
-    console.log(routeMap)
+    console.log("===",routeMap)
     return (method, path) => findHandler(routeMap, method, path);
 }
 // module.exports = loadRoutesFrom;

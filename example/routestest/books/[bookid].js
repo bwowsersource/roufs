@@ -1,4 +1,4 @@
 module.exports = {
-    GET: (req) => req.params,
-    POST: () => { }
-}
+    GET: (req, res) => res.send(req.params),
+    PUT: (req, res) => res.send("Response")
+};
