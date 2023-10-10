@@ -21,14 +21,14 @@ To get started with Roufs in an express project, follow these steps:
 1. Create your route handler modules in the desired directory structure. For example:
 
     ```
-        -   `./routes
+        -   ./routes
         ├── index.js
         ├── authors
         │   ├── GET.js
         │   └── POST.js
         └── books
             ├── index.js
-            └── [bookid].js`
+            └── [bookid].js
     ```
 
 1. Integrate Roufs into your Express.js server in your `index.js` file:
